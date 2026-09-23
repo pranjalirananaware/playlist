@@ -1,0 +1,2213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEONFLOW | Circular Playlist</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+:root{
+    --cyan:#00f5ff;
+    --pink:#ff00d4;
+    --purple:#7c3cff;
+    --green:#00ff9d;
+    --bg:#03030b;
+    --card:rgba(12,12,30,.72);
+    --text:#f5f7ff;
+    --muted:#858aa8;
+}
+
+body{
+    font-family:Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    overflow-x:hidden;
+}
+
+/* BACKGROUND */
+
+body::before{
+    content:"";
+    position:fixed;
+    width:600px;
+    height:600px;
+    background:var(--purple);
+    filter:blur(180px);
+    opacity:.25;
+    top:-250px;
+    left:-180px;
+    z-index:-5;
+}
+
+body::after{
+    content:"";
+    position:fixed;
+    width:600px;
+    height:600px;
+    background:var(--cyan);
+    filter:blur(200px);
+    opacity:.18;
+    right:-250px;
+    bottom:-250px;
+    z-index:-5;
+}
+
+canvas{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:-4;
+}
+
+/* CONTAINER */
+
+.container{
+    width:94%;
+    max-width:1400px;
+    margin:auto;
+    padding:25px 0 50px;
+}
+
+/* HEADER */
+
+header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:25px;
+}
+
+.logo{
+    font-size:30px;
+    font-weight:900;
+    letter-spacing:3px;
+}
+
+.logo span{
+    color:var(--cyan);
+    text-shadow:0 0 20px var(--cyan);
+}
+
+.online{
+    border:1px solid rgba(0,245,255,.3);
+    padding:9px 16px;
+    border-radius:30px;
+    color:var(--cyan);
+    background:rgba(0,245,255,.05);
+    box-shadow:0 0 20px rgba(0,245,255,.1);
+    font-size:12px;
+}
+
+.dot{
+    display:inline-block;
+    width:8px;
+    height:8px;
+    background:var(--green);
+    border-radius:50%;
+    box-shadow:0 0 12px var(--green);
+    margin-right:7px;
+}
+
+/* SEARCH */
+
+.search{
+    margin-bottom:25px;
+    position:relative;
+}
+
+.search input{
+    width:100%;
+    padding:17px 20px 17px 50px;
+    border-radius:15px;
+    border:1px solid rgba(255,255,255,.1);
+    background:rgba(10,10,25,.75);
+    color:white;
+    outline:none;
+    font-size:15px;
+    box-shadow:0 0 25px rgba(0,0,0,.3);
+}
+
+.search input:focus{
+    border-color:var(--cyan);
+    box-shadow:0 0 25px rgba(0,245,255,.15);
+}
+
+.search-icon{
+    position:absolute;
+    left:18px;
+    top:16px;
+    font-size:20px;
+}
+
+/* GRID */
+
+.dashboard{
+    display:grid;
+    grid-template-columns:430px 1fr;
+    gap:22px;
+}
+
+/* CARDS */
+
+.card{
+    background:var(--card);
+    border:1px solid rgba(255,255,255,.09);
+    border-radius:25px;
+    padding:25px;
+    backdrop-filter:blur(25px);
+    box-shadow:
+        0 20px 70px rgba(0,0,0,.4),
+        inset 0 0 30px rgba(255,255,255,.015);
+}
+
+/* PLAYER */
+
+.player{
+    text-align:center;
+}
+
+.album{
+    width:270px;
+    height:270px;
+    margin:5px auto 25px;
+    border-radius:50%;
+    background:
+        radial-gradient(circle at center,#111 0 12%,
+        transparent 13%),
+        repeating-radial-gradient(
+            circle,
+            #17172d 0 4px,
+            #080812 5px 8px
+        );
+    border:8px solid #111;
+    box-shadow:
+        0 0 25px var(--cyan),
+        0 0 70px rgba(0,245,255,.35);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    position:relative;
+    animation:spin 8s linear infinite;
+    animation-play-state:paused;
+}
+
+.album.playing{
+    animation-play-state:running;
+}
+
+.album::before{
+    content:"";
+    width:55px;
+    height:55px;
+    background:linear-gradient(
+        135deg,
+        var(--pink),
+        var(--purple),
+        var(--cyan)
+    );
+    border-radius:50%;
+    box-shadow:0 0 30px var(--pink);
+}
+
+.album::after{
+    content:"";
+    position:absolute;
+    width:15px;
+    height:15px;
+    background:#03030b;
+    border-radius:50%;
+}
+
+@keyframes spin{
+    to{transform:rotate(360deg);}
+}
+
+.now-label{
+    color:var(--cyan);
+    letter-spacing:4px;
+    font-size:11px;
+    margin-bottom:10px;
+}
+
+#currentSong{
+    font-size:27px;
+    margin-bottom:7px;
+}
+
+#currentArtist{
+    color:var(--muted);
+}
+
+.wave{
+    height:55px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:4px;
+    margin:20px 0;
+}
+
+.wave span{
+    width:4px;
+    height:15px;
+    background:linear-gradient(
+        var(--cyan),
+        var(--pink)
+    );
+    border-radius:10px;
+    animation:wave .8s infinite alternate;
+    animation-play-state:paused;
+}
+
+.wave.playing span{
+    animation-play-state:running;
+}
+
+.wave span:nth-child(2){animation-delay:.1s}
+.wave span:nth-child(3){animation-delay:.2s}
+.wave span:nth-child(4){animation-delay:.3s}
+.wave span:nth-child(5){animation-delay:.4s}
+.wave span:nth-child(6){animation-delay:.5s}
+.wave span:nth-child(7){animation-delay:.6s}
+.wave span:nth-child(8){animation-delay:.7s}
+.wave span:nth-child(9){animation-delay:.8s}
+
+@keyframes wave{
+    to{height:48px;}
+}
+
+/* PROGRESS */
+
+.progress-area{
+    margin:10px 0;
+}
+
+.progress{
+    width:100%;
+    height:5px;
+    background:#202037;
+    border-radius:10px;
+    cursor:pointer;
+    overflow:hidden;
+}
+
+.progress-bar{
+    width:0%;
+    height:100%;
+    background:linear-gradient(
+        90deg,
+        var(--purple),
+        var(--cyan),
+        var(--pink)
+    );
+    box-shadow:0 0 12px var(--cyan);
+}
+
+.time{
+    display:flex;
+    justify-content:space-between;
+    color:#626783;
+    font-size:10px;
+    margin-top:7px;
+}
+
+/* CONTROLS */
+
+.controls{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:12px;
+    margin-top:20px;
+}
+
+.ctrl{
+    width:45px;
+    height:45px;
+    border-radius:50%;
+    border:1px solid #292b4b;
+    background:#0d0d1c;
+    color:white;
+    cursor:pointer;
+    transition:.25s;
+}
+
+.ctrl:hover{
+    color:var(--cyan);
+    border-color:var(--cyan);
+    box-shadow:0 0 20px rgba(0,245,255,.3);
+    transform:scale(1.1);
+}
+
+.play{
+    width:65px;
+    height:65px;
+    background:linear-gradient(
+        135deg,
+        var(--purple),
+        var(--pink)
+    );
+    border:none;
+    font-size:22px;
+    box-shadow:0 0 30px rgba(255,0,212,.3);
+}
+
+/* EXTRA CONTROLS */
+
+.extra{
+    display:flex;
+    justify-content:center;
+    gap:20px;
+    margin-top:18px;
+}
+
+.extra button{
+    background:none;
+    border:none;
+    color:#656985;
+    cursor:pointer;
+    font-size:17px;
+}
+
+.extra button:hover,
+.extra button.active{
+    color:var(--cyan);
+    text-shadow:0 0 15px var(--cyan);
+}
+
+/* VOLUME */
+
+.volume{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-top:20px;
+    color:#777b98;
+}
+
+.volume input{
+    flex:1;
+}
+
+/* PLAYLIST */
+
+.playlist-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+}
+
+.playlist-head h2{
+    font-size:23px;
+}
+
+.stats{
+    display:flex;
+    gap:10px;
+}
+
+.stat{
+    padding:8px 12px;
+    background:#101025;
+    border:1px solid #20213c;
+    border-radius:10px;
+    font-size:11px;
+    color:var(--muted);
+}
+
+.song-list{
+    max-height:390px;
+    overflow-y:auto;
+}
+
+.song-list::-webkit-scrollbar{
+    width:5px;
+}
+
+.song-list::-webkit-scrollbar-thumb{
+    background:#35365a;
+    border-radius:20px;
+}
+
+.song{
+    display:flex;
+    align-items:center;
+    gap:13px;
+    padding:12px;
+    margin-bottom:8px;
+    border-radius:15px;
+    border:1px solid transparent;
+    transition:.25s;
+}
+
+.song:hover{
+    background:rgba(255,255,255,.04);
+    border-color:rgba(255,255,255,.08);
+    transform:translateX(4px);
+}
+
+.song.active{
+    background:
+        linear-gradient(
+            90deg,
+            rgba(0,245,255,.09),
+            rgba(255,0,212,.04)
+        );
+    border-color:rgba(0,245,255,.25);
+    box-shadow:inset 3px 0 var(--cyan);
+}
+
+.number{
+    width:25px;
+    color:#555978;
+    font-size:12px;
+}
+
+.cover{
+    width:45px;
+    height:45px;
+    border-radius:11px;
+    background:
+        linear-gradient(
+            135deg,
+            var(--purple),
+            var(--pink),
+            var(--cyan)
+        );
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:19px;
+}
+
+.info{
+    flex:1;
+}
+
+.info h3{
+    font-size:14px;
+    margin-bottom:5px;
+}
+
+.info p{
+    color:#656983;
+    font-size:11px;
+}
+
+.actions{
+    display:flex;
+    gap:5px;
+}
+
+.actions button{
+    border:none;
+    background:none;
+    color:#555978;
+    cursor:pointer;
+    padding:7px;
+}
+
+.actions button:hover{
+    color:var(--cyan);
+}
+
+.favorite{
+    color:#ff3d9a !important;
+    text-shadow:0 0 10px #ff3d9a;
+}
+
+/* ADD */
+
+.add{
+    margin-top:20px;
+    padding-top:20px;
+    border-top:1px solid #1c1d35;
+}
+
+.add h3{
+    margin-bottom:12px;
+}
+
+.inputs{
+    display:grid;
+    grid-template-columns:1fr 1fr auto;
+    gap:8px;
+}
+
+.inputs input{
+    background:#080817;
+    border:1px solid #252642;
+    color:white;
+    padding:12px;
+    border-radius:10px;
+    outline:none;
+}
+
+.inputs input:focus{
+    border-color:var(--cyan);
+}
+
+.add-btn{
+    border:none;
+    border-radius:10px;
+    padding:0 18px;
+    background:linear-gradient(
+        135deg,
+        var(--cyan),
+        var(--purple)
+    );
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+/* LINKED LIST */
+
+.link-card{
+    margin-top:22px;
+}
+
+.link-title{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.link-title h2{
+    font-size:20px;
+}
+
+.badge{
+    color:var(--green);
+    border:1px solid rgba(0,255,157,.3);
+    padding:6px 10px;
+    border-radius:20px;
+    font-size:10px;
+}
+
+.nodes{
+    min-height:190px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:12px;
+    overflow-x:auto;
+    padding:25px 10px;
+}
+
+.node{
+    min-width:110px;
+    padding:17px 10px;
+    text-align:center;
+    border-radius:16px;
+    background:#09091a;
+    border:1px solid #282a4b;
+    position:relative;
+    transition:.3s;
+    box-shadow:0 0 20px rgba(0,0,0,.3);
+}
+
+.node:hover{
+    border-color:var(--cyan);
+    transform:translateY(-7px);
+    box-shadow:0 0 25px rgba(0,245,255,.2);
+}
+
+.node.active-node{
+    border-color:var(--pink);
+    box-shadow:
+        0 0 20px rgba(255,0,212,.3),
+        inset 0 0 20px rgba(255,0,212,.05);
+}
+
+.node-icon{
+    font-size:23px;
+    color:var(--cyan);
+    margin-bottom:8px;
+}
+
+.node strong{
+    display:block;
+    font-size:11px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.node small{
+    display:block;
+    color:#555978;
+    margin-top:5px;
+    font-size:9px;
+}
+
+.arrow{
+    color:var(--cyan);
+    font-size:23px;
+    text-shadow:0 0 10px var(--cyan);
+}
+
+.circular-arrow{
+    text-align:center;
+    color:var(--pink);
+    margin-top:-5px;
+    font-size:12px;
+}
+
+/* TOAST */
+
+.toast{
+    position:fixed;
+    bottom:25px;
+    right:25px;
+    padding:14px 20px;
+    background:#111126;
+    border:1px solid var(--cyan);
+    border-radius:12px;
+    color:white;
+    box-shadow:0 0 30px rgba(0,245,255,.2);
+    transform:translateY(100px);
+    opacity:0;
+    transition:.4s;
+    z-index:10;
+}
+
+.toast.show{
+    transform:translateY(0);
+    opacity:1;
+}
+
+/* RESPONSIVE */
+
+@media(max-width:950px){
+
+    .dashboard{
+        grid-template-columns:1fr;
+    }
+
+    .inputs{
+        grid-template-columns:1fr;
+    }
+
+    .add-btn{
+        padding:12px;
+    }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<canvas id="particles"></canvas>
+
+<div class="container">
+
+<header>
+
+    <div class="logo">
+        NEON<span>FLOW</span> 🎵
+    </div>
+
+    <div class="online">
+        <span class="dot"></span>
+        SYSTEM ONLINE
+    </div>
+
+</header>
+
+<!-- SEARCH -->
+
+<div class="search">
+
+    <span class="search-icon">⌕</span>
+
+    <input
+        type="text"
+        id="search"
+        placeholder="Search your music..."
+        oninput="searchSongs()">
+
+</div>
+
+
+<div class="dashboard">
+
+<!-- PLAYER -->
+
+<div>
+
+<div class="card player">
+
+    <div class="album" id="album">
+    </div>
+
+    <div class="now-label">
+        NOW PLAYING
+    </div>
+
+    <h2 id="currentSong">
+        No Song
+    </h2>
+
+    <p id="currentArtist">
+        Add a song to begin
+    </p>
+
+
+    <div class="wave" id="wave">
+
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+
+    </div>
+
+
+    <div class="progress-area">
+
+        <div
+            class="progress"
+            onclick="seek(event)">
+
+            <div
+                class="progress-bar"
+                id="progressBar">
+            </div>
+
+        </div>
+
+        <div class="time">
+
+            <span id="currentTime">
+                0:00
+            </span>
+
+            <span>
+                3:45
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <div class="controls">
+
+        <button
+            class="ctrl"
+            onclick="previousSong()">
+            ⏮
+        </button>
+
+        <button
+            class="ctrl"
+            onclick="previousSong()">
+            ◀◀
+        </button>
+
+        <button
+            class="ctrl play"
+            id="playButton"
+            onclick="togglePlay()">
+            ▶
+        </button>
+
+        <button
+            class="ctrl"
+            onclick="nextSong()">
+            ▶▶
+        </button>
+
+        <button
+            class="ctrl"
+            onclick="nextSong()">
+            ⏭
+        </button>
+
+    </div>
+
+
+    <div class="extra">
+
+        <button
+            id="shuffle"
+            onclick="toggleShuffle()">
+            🔀
+        </button>
+
+        <button
+            id="repeat"
+            class="active">
+            🔁
+        </button>
+
+        <button>
+            ♡
+        </button>
+
+    </div>
+
+
+    <div class="volume">
+
+        🔊
+
+        <input
+            type="range"
+            min="0"
+            max="100"
+            value="70">
+
+    </div>
+
+</div>
+
+
+<!-- LINKED LIST -->
+
+<div class="card link-card">
+
+    <div class="link-title">
+
+        <h2>
+            ⛓ Circular Linked List
+        </h2>
+
+        <span class="badge">
+            ACTIVE STRUCTURE
+        </span>
+
+    </div>
+
+
+    <div
+        class="nodes"
+        id="nodes">
+    </div>
+
+    <div class="circular-arrow">
+        ↻ LAST NODE → FIRST NODE
+    </div>
+
+</div>
+
+</div>
+
+
+<!-- PLAYLIST -->
+
+<div class="card">
+
+    <div class="playlist-head">
+
+        <h2>
+            MY PLAYLIST
+        </h2>
+
+        <div class="stats">
+
+            <div class="stat">
+                🎵 <span id="songCount">0</span>
+            </div>
+
+            <div class="stat">
+                ❤️ <span id="favCount">0</span>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div
+        class="song-list"
+        id="playlist">
+    </div>
+
+
+    <div class="add">
+
+        <h3>
+            ＋ ADD TO PLAYLIST
+        </h3>
+
+        <div class="inputs">
+
+            <input
+                id="songName"
+                placeholder="Song name">
+
+            <input
+                id="artistName"
+                placeholder="Artist name">
+
+            <button
+                class="add-btn"
+                onclick="addSong()">
+                ADD SONG
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<div
+    class="toast"
+    id="toast">
+</div>
+
+
+<script>
+
+/* ========================================
+   CIRCULAR LINKED LIST
+   ======================================== */
+
+class Node{
+
+    constructor(name,artist){
+
+        this.name=name;
+        this.artist=artist;
+
+        this.next=null;
+
+        this.favorite=false;
+    }
+}
+
+
+class CircularPlaylist{
+
+    constructor(){
+
+        this.head=null;
+        this.current=null;
+        this.size=0;
+
+    }
+
+
+    /* INSERT */
+
+    insert(name,artist){
+
+        let newNode=
+            new Node(name,artist);
+
+
+        if(this.head===null){
+
+            this.head=newNode;
+
+            newNode.next=this.head;
+
+            this.current=this.head;
+
+        }
+
+        else{
+
+            let temp=this.head;
+
+
+            while(temp.next!==this.head){
+
+                temp=temp.next;
+
+            }
+
+
+            temp.next=newNode;
+
+            newNode.next=this.head;
+
+        }
+
+
+        this.size++;
+
+    }
+
+
+    /* DELETE */
+
+    delete(name){
+
+        if(this.head===null)
+            return false;
+
+
+        let current=this.head;
+
+        let previous=null;
+
+
+        do{
+
+            if(
+                current.name.toLowerCase()
+                ===name.toLowerCase()
+            ){
+
+                /* ONE NODE */
+
+                if(current.next===current){
+
+                    this.head=null;
+
+                    this.current=null;
+
+                }
+
+                else{
+
+                    /* CURRENT IS HEAD */
+
+                    if(current===this.head){
+
+                        this.head=
+                            this.head.next;
+
+                    }
+
+
+                    if(this.current===current){
+
+                        this.current=
+                            current.next;
+
+                    }
+
+
+                    let last=this.head;
+
+
+                    while(last.next!==current){
+
+                        last=last.next;
+
+                    }
+
+
+                    last.next=current.next;
+
+                }
+
+
+                this.size--;
+
+                return true;
+
+            }
+
+
+            previous=current;
+
+            current=current.next;
+
+
+        }while(current!==this.head);
+
+
+        return false;
+
+    }
+
+
+    /* UPDATE */
+
+    update(oldName,newName,newArtist){
+
+        if(this.head===null)
+            return false;
+
+
+        let temp=this.head;
+
+
+        do{
+
+            if(
+                temp.name.toLowerCase()
+                ===oldName.toLowerCase()
+            ){
+
+                temp.name=newName;
+
+                temp.artist=newArtist;
+
+                return true;
+
+            }
+
+
+            temp=temp.next;
+
+
+        }while(temp!==this.head);
+
+
+        return false;
+
+    }
+
+
+    /* SEARCH */
+
+    search(name){
+
+        if(this.head===null)
+            return null;
+
+
+        let temp=this.head;
+
+
+        do{
+
+            if(
+                temp.name.toLowerCase()
+                ===name.toLowerCase()
+            ){
+
+                return temp;
+
+            }
+
+
+            temp=temp.next;
+
+
+        }while(temp!==this.head);
+
+
+        return null;
+
+    }
+
+
+    /* NEXT */
+
+    next(){
+
+        if(this.current!==null){
+
+            this.current=
+                this.current.next;
+
+        }
+
+    }
+
+
+    /* PREVIOUS */
+
+    previous(){
+
+        if(this.current===null)
+            return;
+
+
+        let temp=this.current;
+
+
+        while(temp.next!==this.current){
+
+            temp=temp.next;
+
+        }
+
+
+        this.current=temp;
+
+    }
+
+
+    /* DISPLAY */
+
+    display(){
+
+        let result=[];
+
+
+        if(this.head===null)
+            return result;
+
+
+        let temp=this.head;
+
+
+        do{
+
+            result.push(temp);
+
+            temp=temp.next;
+
+
+        }while(temp!==this.head);
+
+
+        return result;
+
+    }
+
+}
+
+
+/* ========================================
+   CREATE PLAYLIST
+   ======================================== */
+
+let playlist=
+    new CircularPlaylist();
+
+
+/* SAMPLE SONGS */
+
+playlist.insert(
+    "Kesariya",
+    "Arijit Singh"
+);
+
+playlist.insert(
+    "Tum Hi Ho",
+    "Arijit Singh"
+);
+
+playlist.insert(
+    "Chaleya",
+    "Arijit Singh"
+);
+
+playlist.insert(
+    "Apna Bana Le",
+    "Arijit Singh"
+);
+
+playlist.insert(
+    "Heeriye",
+    "Jasleen Royal"
+);
+
+playlist.insert(
+    "Aaj Ki Raat",
+    "Madhubanti Bagchi"
+);
+
+
+/* ========================================
+   PLAY / PAUSE
+   ======================================== */
+
+let playing=false;
+
+function togglePlay(){
+
+    if(playlist.current===null){
+
+        toast("Add songs first!");
+
+        return;
+
+    }
+
+
+    playing=!playing;
+
+
+    document.getElementById(
+        "playButton"
+    ).textContent=
+        playing ? "❚❚" : "▶";
+
+
+    document.getElementById(
+        "album"
+    ).classList.toggle(
+        "playing",
+        playing
+    );
+
+
+    document.getElementById(
+        "wave"
+    ).classList.toggle(
+        "playing",
+        playing
+    );
+
+
+    toast(
+        playing
+        ? "▶ Playing "+playlist.current.name
+        : "⏸ Music paused"
+    );
+
+}
+
+
+/* ========================================
+   NEXT
+   ======================================== */
+
+function nextSong(){
+
+    playlist.next();
+
+    playing=true;
+
+    updatePlayer();
+
+    toast(
+        "Next: "+
+        playlist.current.name
+    );
+
+}
+
+
+/* ========================================
+   PREVIOUS
+   ======================================== */
+
+function previousSong(){
+
+    playlist.previous();
+
+    playing=true;
+
+    updatePlayer();
+
+    toast(
+        "Previous: "+
+        playlist.current.name
+    );
+
+}
+
+
+/* ========================================
+   UPDATE PLAYER
+   ======================================== */
+
+function updatePlayer(){
+
+    if(playlist.current===null){
+
+        document.getElementById(
+            "currentSong"
+        ).textContent="No Song";
+
+        return;
+
+    }
+
+
+    document.getElementById(
+        "currentSong"
+    ).textContent=
+        playlist.current.name;
+
+
+    document.getElementById(
+        "currentArtist"
+    ).textContent=
+        playlist.current.artist;
+
+
+    document.getElementById(
+        "playButton"
+    ).textContent=
+        playing ? "❚❚" : "▶";
+
+
+    document.getElementById(
+        "album"
+    ).classList.toggle(
+        "playing",
+        playing
+    );
+
+
+    document.getElementById(
+        "wave"
+    ).classList.toggle(
+        "playing",
+        playing
+    );
+
+
+    displayPlaylist();
+
+}
+
+
+/* ========================================
+   ADD SONG
+   ======================================== */
+
+function addSong(){
+
+    let name=
+        document
+        .getElementById("songName")
+        .value.trim();
+
+
+    let artist=
+        document
+        .getElementById("artistName")
+        .value.trim();
+
+
+    if(name===""||artist===""){
+
+        toast(
+            "⚠ Enter song and artist"
+        );
+
+        return;
+
+    }
+
+
+    playlist.insert(name,artist);
+
+
+    document
+    .getElementById("songName")
+    .value="";
+
+
+    document
+    .getElementById("artistName")
+    .value="";
+
+
+    saveData();
+
+    displayPlaylist();
+
+    toast(
+        "✓ Song inserted into linked list"
+    );
+
+}
+
+
+/* ========================================
+   DELETE
+   ======================================== */
+
+function deleteSong(name){
+
+    if(
+        playlist.delete(name)
+    ){
+
+        saveData();
+
+        displayPlaylist();
+
+        toast(
+            "🗑 Song deleted"
+        );
+
+    }
+
+}
+
+
+/* ========================================
+   UPDATE
+   ======================================== */
+
+function editSong(name){
+
+    let newName=
+        prompt(
+            "Enter new song name:",
+            name
+        );
+
+
+    if(!newName)
+        return;
+
+
+    let newArtist=
+        prompt(
+            "Enter new artist:"
+        );
+
+
+    if(!newArtist)
+        return;
+
+
+    if(
+        playlist.update(
+            name,
+            newName,
+            newArtist
+        )
+    ){
+
+        saveData();
+
+        displayPlaylist();
+
+        toast(
+            "✎ Song updated"
+        );
+
+    }
+
+}
+
+
+/* ========================================
+   FAVORITE
+   ======================================== */
+
+function favoriteSong(song){
+
+    song.favorite=
+        !song.favorite;
+
+
+    saveData();
+
+    displayPlaylist();
+
+}
+
+
+/* ========================================
+   SEARCH
+   ======================================== */
+
+function searchSongs(){
+
+    let query=
+        document
+        .getElementById("search")
+        .value
+        .toLowerCase();
+
+
+    let songs=
+        playlist.display();
+
+
+    let container=
+        document
+        .getElementById("playlist");
+
+
+    container.innerHTML="";
+
+
+    songs.forEach(
+        function(song,index){
+
+            if(
+                song.name
+                .toLowerCase()
+                .includes(query)
+                ||
+                song.artist
+                .toLowerCase()
+                .includes(query)
+            ){
+
+                createSongElement(
+                    song,
+                    index,
+                    container
+                );
+
+            }
+
+        }
+    );
+
+}
+
+
+/* ========================================
+   DISPLAY PLAYLIST
+   ======================================== */
+
+function displayPlaylist(){
+
+    let container=
+        document
+        .getElementById("playlist");
+
+
+    container.innerHTML="";
+
+
+    let songs=
+        playlist.display();
+
+
+    songs.forEach(
+        function(song,index){
+
+            createSongElement(
+                song,
+                index,
+                container
+            );
+
+        }
+    );
+
+
+    document.getElementById(
+        "songCount"
+    ).textContent=
+        songs.length;
+
+
+    let favorites=
+        songs.filter(
+            song=>song.favorite
+        ).length;
+
+
+    document.getElementById(
+        "favCount"
+    ).textContent=
+        favorites;
+
+
+    displayNodes();
+
+}
+
+
+/* ========================================
+   CREATE SONG UI
+   ======================================== */
+
+function createSongElement(
+    song,
+    index,
+    container
+){
+
+    let item=
+        document.createElement("div");
+
+
+    item.className="song";
+
+
+    if(
+        song===playlist.current
+    ){
+
+        item.classList.add("active");
+
+    }
+
+
+    item.innerHTML=`
+
+        <div class="number">
+            ${String(index+1).padStart(2,"0")}
+        </div>
+
+        <div class="cover">
+            ♪
+        </div>
+
+        <div class="info">
+
+            <h3>
+                ${song.name}
+            </h3>
+
+            <p>
+                ${song.artist}
+            </p>
+
+        </div>
+
+        <div class="actions">
+
+            <button
+                onclick="playlist.current=
+                song;
+                playing=true;
+                updatePlayer();">
+
+                ▶
+            </button>
+
+            <button
+                class="${
+                    song.favorite
+                    ? "favorite"
+                    : ""
+                }"
+                onclick="favoriteSong(song)">
+
+                ♥
+            </button>
+
+            <button
+                onclick="editSong(
+                '${song.name.replace(
+                    /'/g,
+                    "\\'"
+                )}')">
+
+                ✎
+            </button>
+
+            <button
+                onclick="deleteSong(
+                '${song.name.replace(
+                    /'/g,
+                    "\\'"
+                )}')">
+
+                🗑
+            </button>
+
+        </div>
+
+    `;
+
+
+    container.appendChild(item);
+
+}
+
+
+/* ========================================
+   LINKED LIST VISUALIZATION
+   ======================================== */
+
+function displayNodes(){
+
+    let container=
+        document
+        .getElementById("nodes");
+
+
+    container.innerHTML="";
+
+
+    let songs=
+        playlist.display();
+
+
+    songs.forEach(
+        function(song,index){
+
+            let node=
+                document.createElement("div");
+
+
+            node.className="node";
+
+
+            if(
+                song===playlist.current
+            ){
+
+                node.classList.add(
+                    "active-node"
+                );
+
+            }
+
+
+            node.innerHTML=`
+
+                <div class="node-icon">
+                    ♪
+                </div>
+
+                <strong>
+                    ${song.name}
+                </strong>
+
+                <small>
+                    NODE ${index+1}
+                </small>
+
+            `;
+
+
+            container.appendChild(node);
+
+
+            if(
+                index<songs.length-1
+            ){
+
+                let arrow=
+                    document.createElement(
+                        "div"
+                    );
+
+
+                arrow.className="arrow";
+
+                arrow.textContent="→";
+
+                container.appendChild(
+                    arrow
+                );
+
+            }
+
+        }
+    );
+
+
+    if(songs.length>1){
+
+        let arrow=
+            document.createElement(
+                "div"
+            );
+
+
+        arrow.className="arrow";
+
+        arrow.textContent="↻";
+
+        container.appendChild(
+            arrow
+        );
+
+    }
+
+}
+
+
+/* ========================================
+   SHUFFLE
+   ======================================== */
+
+let shuffle=false;
+
+
+function toggleShuffle(){
+
+    shuffle=!shuffle;
+
+
+    document
+    .getElementById("shuffle")
+    .classList.toggle(
+        "active",
+        shuffle
+    );
+
+
+    toast(
+        shuffle
+        ? "🔀 Shuffle ON"
+        : "Shuffle OFF"
+    );
+
+}
+
+
+/* ========================================
+   PROGRESS BAR
+   ======================================== */
+
+let progress=0;
+
+
+setInterval(
+    function(){
+
+        if(!playing)
+            return;
+
+
+        progress+=.15;
+
+
+        if(progress>=100){
+
+            progress=0;
+
+            nextSong();
+
+        }
+
+
+        document
+        .getElementById(
+            "progressBar"
+        )
+        .style.width=
+            progress+"%";
+
+
+        let seconds=
+            Math.floor(
+                progress*2.25
+            );
+
+
+        let min=
+            Math.floor(seconds/60);
+
+
+        let sec=
+            seconds%60;
+
+
+        document
+        .getElementById(
+            "currentTime"
+        )
+        .textContent=
+            min+":"+
+            String(sec).padStart(2,"0");
+
+
+    },
+    1000
+);
+
+
+/* CLICK PROGRESS */
+
+function seek(event){
+
+    let bar=
+        event.currentTarget;
+
+
+    let percent=
+        event.offsetX/
+        bar.offsetWidth*
+        100;
+
+
+    progress=percent;
+
+}
+
+
+/* ========================================
+   TOAST
+   ======================================== */
+
+let toastTimer;
+
+
+function toast(message){
+
+    let box=
+        document
+        .getElementById("toast");
+
+
+    box.textContent=message;
+
+    box.classList.add("show");
+
+
+    clearTimeout(toastTimer);
+
+
+    toastTimer=
+        setTimeout(
+            ()=>{
+                box.classList.remove(
+                    "show"
+                );
+            },
+            2200
+        );
+
+}
+
+
+/* ========================================
+   LOCAL STORAGE
+   ======================================== */
+
+function saveData(){
+
+    let songs=
+        playlist.display();
+
+
+    localStorage.setItem(
+        "neonflow",
+        JSON.stringify(
+            songs.map(
+                song=>({
+                    name:song.name,
+                    artist:song.artist,
+                    favorite:song.favorite
+                })
+            )
+        )
+    );
+
+}
+
+
+/* ========================================
+   PARTICLE BACKGROUND
+   ======================================== */
+
+const canvas=
+    document.getElementById(
+        "particles"
+    );
+
+const ctx=
+    canvas.getContext("2d");
+
+
+let particles=[];
+
+
+function resize(){
+
+    canvas.width=
+        window.innerWidth;
+
+    canvas.height=
+        window.innerHeight;
+
+}
+
+
+resize();
+
+
+window.addEventListener(
+    "resize",
+    resize
+);
+
+
+for(let i=0;i<80;i++){
+
+    particles.push({
+
+        x:Math.random()*
+            window.innerWidth,
+
+        y:Math.random()*
+            window.innerHeight,
+
+        size:
+            Math.random()*2+1,
+
+        speed:
+            Math.random()*.5+.1
+
+    });
+
+}
+
+
+function animateParticles(){
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    particles.forEach(
+        p=>{
+
+            p.y-=p.speed;
+
+
+            if(p.y<0){
+
+                p.y=
+                    canvas.height;
+
+            }
+
+
+            ctx.beginPath();
+
+
+            ctx.arc(
+                p.x,
+                p.y,
+                p.size,
+                0,
+                Math.PI*2
+            );
+
+
+            ctx.fillStyle=
+                "rgba(0,245,255,.55)";
+
+
+            ctx.fill();
+
+        }
+    );
+
+
+    requestAnimationFrame(
+        animateParticles
+    );
+
+}
+
+
+animateParticles();
+
+
+/* ========================================
+   START
+   ======================================== */
+
+updatePlayer();
+
+</script>
+
+</body>
+</html>
